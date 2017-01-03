@@ -1,0 +1,34 @@
+package join;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+import org.apache.hadoop.util.GenericOptionsParser;
+
+public class PhotoFreqDriver {
+	public static void main(String[] args) throws Exception {
+		
+		Configuration conf = new Configuration();
+		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
+		if (otherArgs.length != 2) {
+			System.err.println("Usage: PhotoFreqDriver <in> <out>");
+			System.exit(2);
+		}
+		Job job = new Job(conf, "photo count with combiner");
+		job.setNumReduceTasks(3);
+		job.setJarByClass(PhotoFreqDriver.class);
+		job.setMapperClass(PhotoFreqMapper.class);
+		//job.setGroupingComparatorClass(JoinGroupComparator.class);
+		job.setReducerClass(PhotoFreqReducer.class);
+		job.setCombinerClass(PhotoFreqReducer.class);
+		job.setOutputKeyClass(Text.class);
+		job.setOutputValueClass(Text.class);
+		TextInputFormat.addInputPath(job, new Path(otherArgs[0]));
+		TextOutputFormat.setOutputPath(job, new Path(otherArgs[1]));
+		System.exit(job.waitForCompletion(true) ? 0 : 1);
+	}
+}
+
